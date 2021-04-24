@@ -99,7 +99,10 @@ void Image::display(QPainter &painter){
     QPixmap pixmap2show = QPixmap::fromImage(m_image_show);
     m_scale[0] = float(m_canvas->width()) / m_width;
     m_scale[1] = float(m_canvas->height()) / m_height;
+    painter.translate(m_offset);
+    painter.scale(m_zoomValue, m_zoomValue);
     painter.drawPixmap(0, 0, m_canvas->width(), m_canvas->height(), pixmap2show);
+
 }
 
 void Image::adjustBrightness(int brightness){
@@ -165,6 +168,41 @@ void Image::adjustContrast(int contrast){
         }
     }
     m_image_show = tmp_image;
+}
+
+void Image::OnZoomInImage(){
+    m_zoomValue += 0.05;
+}
+
+void Image::OnZoomoutImage()
+{
+    m_zoomValue -= 0.05;
+    if(m_zoomValue <=0)
+    {
+        m_zoomValue = 0.05;
+    }
+}
+
+void Image::OnPresetImage()
+{
+    m_zoomValue = 1.0;
+}
+
+void Image::setOffset(QPoint &offset)
+{
+    m_offset.setX(offset.x());
+    m_offset.setY(offset.y());
+}
+
+void Image::setOffset(int x, int y)
+{
+    m_offset.setX(x);
+    m_offset.setY(y);
+}
+
+void Image::addOffset(QPoint &offset)
+{
+    m_offset += offset;
 }
 
 /*void Image::readDCM(const QString &filename){

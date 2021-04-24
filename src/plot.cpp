@@ -99,10 +99,20 @@ bool Plot::eventFilter(QObject *watched, QEvent *event)
     return QWidget::eventFilter(watched,event);
 }
 
-
+void Plot::wheelEvent(QWheelEvent *event)
+{
+    if(m_imgnamelists.isEmpty())
+        return;
+    int value = event->delta();
+    if(value > 0)
+        m_img.OnZoomInImage();
+    else
+        m_img.OnZoomoutImage();
+}
 
 void Plot::mousePressEvent(QMouseEvent *event)
 {
+    m_oldpoint=event->pos()-(ui->centralWidget->pos()+ui->widget->pos()+ui->display_image->pos());
     if(!m_imgnamelists.isEmpty()&&event->button()==Qt::RightButton){
         if(ui->rectsTable->currentRow() != -1){
             ui->rectsTable->setCurrentCell(-1, -1);
@@ -118,7 +128,9 @@ void Plot::mouseMoveEvent(QMouseEvent *event)
 {
     if(!m_imgnamelists.isEmpty())
     {
-        m_movepoint=event->pos()-(ui->centralWidget->pos()+ui->widget->pos()+ui->display_image->pos());
+        QPoint movepoint=event->pos()-(ui->centralWidget->pos()+ui->widget->pos()+ui->display_image->pos());
+        qreal zoomValue = m_img.getZoomValue();
+        m_movepoint = (movepoint - m_img.getOffset()) / zoomValue;
         if(event->buttons()&Qt::LeftButton){
             int x = static_cast<int>(m_movepoint.x() / m_img.getScale()[0]);
             int y = static_cast<int>(m_movepoint.y() / m_img.getScale()[1]);
@@ -126,11 +138,17 @@ void Plot::mouseMoveEvent(QMouseEvent *event)
             x = x > 0 ? x : 0;
             y = y < m_img.getHeight() ? y : m_img.getHeight();
             y = y > 0 ? y : 0;
-            m_moverectpoint.setX(x);
-            m_moverectpoint.setY(y);
+            m_moverectpoint.setX(static_cast<int>(x));
+            m_moverectpoint.setY(static_cast<int>(y));
         }else {
             m_moverectpoint.setX(0);
             m_moverectpoint.setY(0);
+        }
+
+        if(event->buttons()&Qt::RightButton){
+            QPoint pos = movepoint - m_oldpoint;
+            m_img.addOffset(pos);
+            m_oldpoint = movepoint;
         }
         emit mobilePoint(m_movepoint);
     }
@@ -140,11 +158,14 @@ void Plot::mouseReleaseEvent(QMouseEvent *event)
 {
     if(!m_imgnamelists.isEmpty()&&event->button()==Qt::LeftButton)
     {
-        m_point=event->pos()-(ui->centralWidget->pos()+ui->widget->pos()+ui->display_image->pos());
-        if(m_point.x()>=0&&m_point.x()<=ui->display_image->width()&&
-           m_point.y()>=0&&m_point.y()<=ui->display_image->height())//判断点是否在图像内部
+        QPoint release_point=event->pos()-(ui->centralWidget->pos()+ui->widget->pos()+ui->display_image->pos());
+        qreal zoomValue = m_img.getZoomValue();
+        release_point -= m_img.getOffset();
+        release_point /= zoomValue;
+        if(release_point.x()>=0&&release_point.x()<=m_img.getWidth()*m_img.getScale()[0]&&
+           release_point.y()>=0&&release_point.y()<=m_img.getHeight()*m_img.getScale()[1])//判断点是否在图像内部
         {
-            m_pairpoint.append(m_point);
+            m_pairpoint.append(release_point);
             if(m_pairpoint.count()==2){
                 if( m_pairpoint[1].x()<m_pairpoint[0].x()){
                     int x = m_pairpoint[0].x();
@@ -160,7 +181,7 @@ void Plot::mouseReleaseEvent(QMouseEvent *event)
             }
         }
 
-        emit releasePoint(m_point);
+        emit releasePoint(release_point);
     }
 }
 
@@ -221,6 +242,8 @@ void Plot::updateInf()
     recover();
     this->setCursor(Qt::ArrowCursor);
     m_pairpoint.clear();
+    m_img.OnPresetImage();
+    m_img.setOffset(0, 0);
 }
 
 void Plot::preImg()

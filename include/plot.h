@@ -45,6 +45,7 @@ public slots:
 
 protected:
    bool eventFilter(QObject *watched,QEvent *event);
+   void wheelEvent(QWheelEvent *event);
    void mousePressEvent(QMouseEvent *event);
    void mouseMoveEvent(QMouseEvent *event);
    void mouseReleaseEvent(QMouseEvent *event);
@@ -63,7 +64,7 @@ private:
     Rectangle m_rects; //标注信息
     Image m_img;
     QStringList m_imgnamelists; //文件夹中图片名
-    QPoint m_movepoint,m_point,m_moverectpoint;
+    QPoint m_movepoint,m_oldpoint,m_moverectpoint;
     QPolygon m_pairpoint;//存储最小点和最大点
     int m_imgid;//当前图像计数
     File_OP m_cache;

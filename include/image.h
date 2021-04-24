@@ -10,7 +10,8 @@
 class Image
 {
 public:
-    Image():m_canvas(nullptr){
+    Image():m_canvas(nullptr), m_zoomValue(1.0),
+            m_offset(0, 0){
        // m_wl_ww = new double[2];
         //m_photometric_interpretation = new char[256];
     }
@@ -33,6 +34,14 @@ public:
     void display(QPainter &painter);
     void adjustBrightness(int brightness);
     void adjustContrast(int contrast);
+    void OnZoomInImage();
+    void OnZoomoutImage();
+    void OnPresetImage();
+    qreal getZoomValue() {return m_zoomValue;}
+    const QPoint& getOffset() {return m_offset;}
+    void setOffset(QPoint& offset);
+    void setOffset(int x, int y);
+    void addOffset(QPoint& offset);
     //void readDCM(const QString& filename);
     //bool dcmImagePreprocessor(const unsigned short *dcm_raw_data_ptr);
     //std::vector<int> cal_max_min_pixel_data(const unsigned short *dcm_raw_data_ptr);
@@ -43,6 +52,8 @@ private:
     QImage m_image_show;
     QImage m_image_orig;
     QString m_file_root;
+    qreal m_zoomValue;
+    QPoint m_offset;
     int m_width;
     int m_height;
     float m_scale[2];
