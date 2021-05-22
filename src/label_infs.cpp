@@ -3,7 +3,6 @@
 #include <QDir>
 #include <QHeaderView>
 #include <QVector>
-#include <QDebug>
 
 const QVector<Qt::GlobalColor> colors = {Qt::red, Qt::green, Qt::blue, Qt::cyan, Qt::magenta,
                                      Qt::yellow, Qt::darkRed, Qt::darkGreen, Qt::darkBlue, Qt::darkYellow};
@@ -86,18 +85,17 @@ void LabelInfs::save(const QString &imgname){
         QString str = rectinf2string(m_rects[i]);
         saveinf.append(str);
     }
-    QStringList tmp_name = imgname.split(".");
-    int index = tmp_name.size() - 1;
-    tmp_name[index] = "csv";
-    QString savepath = m_file_root + "/" + tmp_name.join(".");
+	QFileInfo tmp_file(m_file_root + "/" + imgname);
+	QString base_name = tmp_file.baseName();
+	QString savepath = m_file_root + "/" + base_name + ".csv";
     m_csv_op.writer(savepath, saveinf);
 }
 
 void LabelInfs::recover(const QString &imgname){
-    QStringList tmp_name = imgname.split(".");
-    int index = tmp_name.size() - 1;
-    tmp_name[index] = "csv";
-    QString filepath = m_file_root + "/" + tmp_name.join(".");
+   
+	QFileInfo tmp_file(m_file_root + "/" + imgname);
+	QString base_name = tmp_file.baseName();
+	QString filepath = m_file_root + "/" + base_name + ".csv";
     clear();
     QFileInfo file(filepath);
     if (file.exists()){

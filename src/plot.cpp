@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QPainter>
 #include <QMessageBox>
+#include <qmimedata.h>
 #include <sstream>
 #include <string>
 
@@ -14,6 +15,7 @@ Plot::Plot(QWidget *parent) :
 {
     ui->setupUi(this);
     ui->display_image->installEventFilter(this);
+	ui->display_image->setAcceptDrops(true);
     ui->widget->setMouseTracking(true);
     ui->centralWidget->setMouseTracking(true);
     setFocusPolicy(Qt::StrongFocus);
@@ -24,6 +26,7 @@ Plot::Plot(QWidget *parent) :
     connect(ui->next_img,SIGNAL(clicked(bool)),this,SLOT(nextImg()));
     connect(ui->delete_button,SIGNAL(clicked(bool)),this,SLOT(deleteRect()));
     connect(ui->skip,SIGNAL(clicked(bool)),this,SLOT(skipImg()));
+    connect(ui->skip_line,SIGNAL(returnPressed()), this, SLOT(skipImg()));
     connect(ui->exit,SIGNAL(clicked(bool)),this,SLOT(windowClose()));
     connect(ui->clear,SIGNAL(clicked(bool)),this,SLOT(clear()));
     connect(ui->brightness, SIGNAL(valueChanged(int)), this, SLOT(adjustBrightness(int)));
@@ -36,6 +39,7 @@ Plot::Plot(QWidget *parent) :
     m_labels.init(ui->labels);
     m_img.init(ui->display_image);
     m_rects.init(ui->rectsTable, &m_labels);
+	
 
 //    m_display_scale.setFixedSize(QSize(20, 20));
 //    m_display_scale.setAutoFillBackground(true);
@@ -107,13 +111,62 @@ void Plot::openFloder() //打开图片文件夹
 
 bool Plot::eventFilter(QObject *watched, QEvent *event)
 {
-    if(watched==ui->display_image&&event->type()==QEvent::Paint&&!m_imgnamelists.isEmpty()){
+	if (watched == ui->display_image) {
+		if (event->type() == QEvent::DragEnter) {
+			QDragEnterEvent *dee = dynamic_cast<QDragEnterEvent *>(event);
+			dee->acceptProposedAction();
+			return true;
+		}
+		else if (event->type() == QEvent::Drop) {
+			QDropEvent *de = dynamic_cast<QDropEvent *>(event);
+			QList<QUrl> urls = de->mimeData()->urls();
+			if (urls.isEmpty() || urls.count() > 1)
+				return true;
+			QFileInfo file(urls.first().toLocalFile());
+			m_imgnamelists.clear();
+			ui->fileLists->clear();
+			m_imgid = 0;
+			if (file.isDir()) {
+				m_img.setFileRoot(file.filePath());
+				m_rects.setFileRoot(file.filePath());
+				QDir dir(file.filePath());
+				QStringList tmp_imgnamelists = dir.entryList();
+				for (int i = 0, k = 0; i < tmp_imgnamelists.size(); ++i) {
+					if (!(tmp_imgnamelists[i].endsWith(".csv") || tmp_imgnamelists[i].endsWith("."))) {
+						m_imgnamelists.append(tmp_imgnamelists[i]);
+						ui->fileLists->insertItem(k, file.filePath() + "/" + m_imgnamelists[k++]);
+					}
+				}
+				if (m_imgnamelists.isEmpty()) {
+					QMessageBox::information(this, QStringLiteral("提示"),
+						QStringLiteral("文件夹为空!"));
+					return true;
+				}
+				ui->progressBar->setRange(0, m_imgnamelists.count() - 1);
+				ui->skip_line->setText("1");
+				updateInf();
+				update();
+				return false;
+			}
+			m_imgnamelists.append(file.fileName());
+			m_img.setFileRoot(file.path());
+			m_rects.setFileRoot(file.path());
+			ui->fileLists->insertItem(0, file.filePath());
+			ui->progressBar->setRange(0, m_imgnamelists.count() - 1);
+			ui->skip_line->setText("1");
+			updateInf();
+			update();
+			return false;
+		}
+	}
+	if(watched==ui->display_image&&event->type()==QEvent::Paint&&!m_imgnamelists.isEmpty()){
         m_painter.begin(ui->display_image);
         draw();
         update();
         m_painter.end();
         return false;
     }
+    
     return QWidget::eventFilter(watched,event);
 }
 
@@ -271,8 +324,8 @@ void Plot::updateInf()
 //        int wl = static_cast<int>(m_img.getOrgWL());
 //        ui->brightness->setValue(ww);
 //        ui->contrast->setValue(wl);
-        ui->brightness_label->setText(QStringLiteral("窗宽"));
-        ui->contrast_label->setText(QStringLiteral("窗位"));
+        ui->brightness_label->setText(QStringLiteral("窗宽："));
+        ui->contrast_label->setText(QStringLiteral("窗位："));
         ui->reset_brightness->setText(QStringLiteral("窗宽重置"));
         ui->reset_contrast->setText(QStringLiteral("窗位重置"));
     }else{
@@ -280,8 +333,8 @@ void Plot::updateInf()
         ui->contrast->setRange(-100, 100);
         ui->brightness->setValue(0);
         ui->contrast->setValue(0);
-        ui->brightness_label->setText(QStringLiteral("亮度"));
-        ui->contrast_label->setText(QStringLiteral("对比度"));
+        ui->brightness_label->setText(QStringLiteral("亮度："));
+        ui->contrast_label->setText(QStringLiteral("对比度："));
         ui->reset_brightness->setText(QStringLiteral("亮度重置"));
         ui->reset_contrast->setText(QStringLiteral("对比度重置"));
     }
@@ -543,3 +596,4 @@ void Plot::upSelectRect(){
     }
     ui->rectsTable->setCurrentCell(id - 1, 0);
 }
+

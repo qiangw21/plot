@@ -1,5 +1,4 @@
 ﻿#include "image.h"
-#include "QMessageBox"
 
 void Image::init(QLabel *canvas){
     m_canvas = canvas;

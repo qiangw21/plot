@@ -69,8 +69,6 @@ private:
     int m_imgid;//当前图像计数
     File_OP m_cache;
     //QLabel m_display_scale;
-
-    void displayImg();//显示图片
     void draw();//画矩形
     void recover(); //恢复标注状态
     void updateInf();//更新信息
