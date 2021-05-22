@@ -1,4 +1,4 @@
-#include "rectangle.h"
+﻿#include "label_infs.h"
 #include <QFileInfo>
 #include <QDir>
 #include <QHeaderView>
@@ -17,34 +17,34 @@ QString rectinf2string(const RectInf &rect){
     return str;
 }
 
-void Rectangle::init(QTableWidget *rectTable, Labels* labels){
+void LabelInfs::init(QTableWidget *rectTable, Labels* labels){
     m_labels = labels;
     m_rects_table = rectTable;
     rectTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     rectTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     rectTable->setSelectionMode(QAbstractItemView::SingleSelection);
-    setHeader();
+    //setHeader();
 }
 
-void Rectangle::setHeader(){
+void LabelInfs::setHeader(){
     QStringList header;
     header << QStringLiteral("标签") << QStringLiteral("起点X坐标") << QStringLiteral("起点Y坐标") <<
               QStringLiteral("终点X坐标") << QStringLiteral("终点Y坐标");// << QStringLiteral("宽度") << QStringLiteral("高度");
     m_rects_table->setHorizontalHeaderLabels(header);
 }
 
-void Rectangle::append(RectInf& rect){
+void LabelInfs::append(RectInf& rect){
     m_rects.push_back(rect);
 }
 
-void Rectangle::insert(RectInf &rect){
+void LabelInfs::insert(RectInf &rect){
     m_rects.push_back(rect);
     m_rects_table->insertRow(m_rects_table->rowCount());
     int rowId = m_rects_table->rowCount() - 1;
     setRowInf(rowId, rect);
 }
 
-void Rectangle::setRowInf(int rowId, RectInf &rect){
+void LabelInfs::setRowInf(int rowId, RectInf &rect){
 
     QTableWidgetItem *item0 = new QTableWidgetItem(rect.label);
     QTableWidgetItem *item1 = new QTableWidgetItem(QString::number(rect.minPoint.x()));
@@ -62,13 +62,13 @@ void Rectangle::setRowInf(int rowId, RectInf &rect){
     //m_rects_table->setItem(rowId, 6, item6);
 }
 
-void Rectangle::clear(){
+void LabelInfs::clear(){
     m_rects.clear();
     m_rects_table->clearContents();
     m_rects_table->setRowCount(0);
 }
 
-void Rectangle::deleteRect(){
+void LabelInfs::deleteRect(){
     int id = m_rects_table->currentRow();
     if (id != -1){
         m_rects.remove(id);
@@ -76,11 +76,11 @@ void Rectangle::deleteRect(){
     }
 }
 
-void Rectangle::setFileRoot(const QString &fileroot){
+void LabelInfs::setFileRoot(const QString &fileroot){
     m_file_root = fileroot;
 }
 
-void Rectangle::save(const QString &imgname){
+void LabelInfs::save(const QString &imgname){
     QStringList saveinf;
     for (int i=0; i<m_rects.size(); ++i){
         QString str = rectinf2string(m_rects[i]);
@@ -93,7 +93,7 @@ void Rectangle::save(const QString &imgname){
     m_csv_op.writer(savepath, saveinf);
 }
 
-void Rectangle::recover(const QString &imgname){
+void LabelInfs::recover(const QString &imgname){
     QStringList tmp_name = imgname.split(".");
     int index = tmp_name.size() - 1;
     tmp_name[index] = "csv";
@@ -118,7 +118,7 @@ void Rectangle::recover(const QString &imgname){
     }
 }
 
-void Rectangle::drawRects(QPainter &painter, const float* scale){
+void LabelInfs::drawRects(QPainter &painter, const float* scale){
     if(!m_rects.empty()){
         for(int i=0; i<m_rects.size(); ++i){
             int x = m_rects[i].minPoint.x()*scale[0];
@@ -134,7 +134,7 @@ void Rectangle::drawRects(QPainter &painter, const float* scale){
     }
 }
 
-RectInf& Rectangle::selectRect(int id, QPainter &painter, const float* scale){
+RectInf& LabelInfs::selectRect(int id, QPainter &painter, const float* scale){
 
     int x = m_rects[id].minPoint.x()*scale[0];
     int y = m_rects[id].minPoint.y()*scale[1];
@@ -155,9 +155,9 @@ void Labels::init(QTableWidget *labelTable){
     labelTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     labelTable->setSelectionMode(QAbstractItemView::SingleSelection);
     //labelTable->setColumnWidth(0, 163);
-    QStringList header;
-    header << QStringLiteral("标签");
-    labelTable->setHorizontalHeaderLabels(header);
+    //QStringList header;
+    //header << QStringLiteral("标签");
+    //labelTable->setHorizontalHeaderLabels(header);
     for(int i=0; i<m_labels.size(); ++i){
         labelTable->insertRow(labelTable->rowCount());
         labelTable->setItem(i, 0, new QTableWidgetItem(m_labels[i]));

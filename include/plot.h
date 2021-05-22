@@ -9,7 +9,7 @@
 #include <QMouseEvent>
 #include <Qvector>
 #include <QPainter>
-#include "rectangle.h"
+#include "label_infs.h"
 #include "image.h"
 
 namespace Ui {
@@ -61,13 +61,14 @@ private:
     QPainter m_painter; //画笔
     Labels m_labels;   //标签信息
     RectInf m_rectinf; //当前标注信息
-    Rectangle m_rects; //标注信息
+    LabelInfs m_rects; //标注信息
     Image m_img;
     QStringList m_imgnamelists; //文件夹中图片名
     QPoint m_movepoint,m_oldpoint,m_moverectpoint;
     QPolygon m_pairpoint;//存储最小点和最大点
     int m_imgid;//当前图像计数
     File_OP m_cache;
+    //QLabel m_display_scale;
 
     void displayImg();//显示图片
     void draw();//画矩形

@@ -1,36 +1,25 @@
-#ifndef IMAGE_H
+﻿#ifndef IMAGE_H
 #define IMAGE_H
 #include <QPixmap>
 #include <QLabel>
 #include <QString>
 #include <QPainter>
 #include <memory>
+#include "dcm_loader.h"
 
 
 class Image
 {
 public:
     Image():m_canvas(nullptr), m_zoomValue(1.0),
-            m_offset(0, 0){
-       // m_wl_ww = new double[2];
-        //m_photometric_interpretation = new char[256];
-    }
-    ~Image() {
-       /* if(m_wl_ww!=nullptr){
-            delete[] m_wl_ww;
-            m_wl_ww = nullptr;
-        }
-        if(m_photometric_interpretation!=nullptr){
-            delete[] m_photometric_interpretation;
-            m_photometric_interpretation = nullptr;
-        }*/
-    }
+            m_offset(0, 0), m_is_dcm(false){}
+    ~Image() {}
     void init(QLabel* canvas);
     int getWidth() {return m_width;}
     int getHeight() {return m_height;}
     const float* getScale() {return m_scale;}
     void setFileRoot(QString &fileroot) {m_file_root = fileroot;}
-    void imread(QString &imgname);
+    bool imread(QString &imgname);
     void display(QPainter &painter);
     void adjustBrightness(int brightness);
     void adjustContrast(int contrast);
@@ -42,10 +31,9 @@ public:
     void setOffset(QPoint& offset);
     void setOffset(int x, int y);
     void addOffset(QPoint& offset);
-    //void readDCM(const QString& filename);
-    //bool dcmImagePreprocessor(const unsigned short *dcm_raw_data_ptr);
-    //std::vector<int> cal_max_min_pixel_data(const unsigned short *dcm_raw_data_ptr);
-
+    bool getIsDCM() {return m_is_dcm;}
+    double getOrgWW(){return m_org_ww;}
+    double getOrgWL(){return m_org_wl;}
 
 private:
     QLabel* m_canvas;
@@ -59,9 +47,12 @@ private:
     float m_scale[2];
 
     //dcmInfo
-    //std::unique_ptr<unsigned short> m_dcm_raw_data_ptr;
-    //double *m_wl_ww;
-    //char *m_photometric_interpretation;
+    DcmLoader m_dcmLoader;
+    double m_org_ww;
+    double m_org_wl;
+    double m_temp_ww;
+    double m_temp_wl;
+    bool m_is_dcm;
 };
 
 #endif // IMAGE_H

@@ -1,5 +1,5 @@
-#ifndef RECTANGLE_H
-#define RECTANGLE_H
+﻿#ifndef LABEL_INFS_H
+#define LABEL_INFS_H
 #include <QPoint>
 #include <QVector>
 #include <QString>
@@ -21,10 +21,10 @@ class Labels;
 
 QString rectinf2string(const RectInf& rect);
 
-class Rectangle
+class LabelInfs
 {
 public:
-    Rectangle():m_rects_table(nullptr), m_labels(nullptr){}
+    LabelInfs():m_rects_table(nullptr), m_labels(nullptr){}
     void init(QTableWidget *rectTable, Labels* labels);
     void setHeader();
     void setFileRoot(const QString& fileroot);
@@ -61,4 +61,4 @@ private:
     File_OP m_csv_op;
 };
 
-#endif // RECTANGLE_H
+#endif // LABEL_INFS_H

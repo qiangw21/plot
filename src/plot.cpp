@@ -1,4 +1,4 @@
-#include "plot.h"
+﻿#include "plot.h"
 #include "ui_plot.h"
 #include <QFileDialog>
 #include <QDebug>
@@ -7,7 +7,6 @@
 #include <QMessageBox>
 #include <sstream>
 #include <string>
-#include <QDebug>
 
 
 Plot::Plot(QWidget *parent) :
@@ -38,6 +37,17 @@ Plot::Plot(QWidget *parent) :
     m_img.init(ui->display_image);
     m_rects.init(ui->rectsTable, &m_labels);
 
+//    m_display_scale.setFixedSize(QSize(20, 20));
+//    m_display_scale.setAutoFillBackground(true);
+//    QPalette palette;
+//    palette.setColor(QPalette::Background, Qt::white);
+//    m_display_scale.setPalette(palette);
+
+//    m_display_scale.setAlignment(Qt::AlignCenter);
+
+//    m_display_scale.setVisible(true);
+//    m_display_scale.move(0,3);
+
 }
 
 Plot::~Plot()
@@ -57,7 +67,7 @@ void Plot::openFloder() //打开图片文件夹
         if(dir.exists())
             openDir = cacheList[0];
     }
-    QString filepath=QFileDialog::getExistingDirectory(this,tr("图像路径"), openDir);
+    QString filepath=QFileDialog::getExistingDirectory(this, QStringLiteral("图像路径"), openDir);
     if(filepath.isEmpty()){
         return;
     }else{
@@ -66,18 +76,26 @@ void Plot::openFloder() //打开图片文件夹
         m_cache.writer(cachePath, cacheList, false);
         m_rects.setFileRoot(filepath);
         m_img.setFileRoot(filepath);
-        ui->caption->setText("初始化...");
+        ui->caption->setText(QStringLiteral("初始化..."));
+        m_imgnamelists.clear();
+		ui->fileLists->clear();
+		m_imgid = 0;
         QDir dir(filepath);
-        QStringList namefilters;
-        namefilters<<"*.jpg"<<"*.png"<<"*.jpeg";
-        m_imgnamelists = dir.entryList(namefilters,QDir::Files|QDir::Readable,QDir::Name);
+        //QStringList namefilters;
+        //namefilters<<"*.jpg"<<"*.png"<<"*.jpeg"<<"*.dcm";
+        //m_imgnamelists = dir.entryList(namefilters,QDir::Files|QDir::Readable,QDir::Name);
+		QStringList tmp_imgnamelists = dir.entryList();
+
+		for (int i = 0, k = 0; i < tmp_imgnamelists.size(); ++i) {
+			if (!(tmp_imgnamelists[i].endsWith(".csv") || tmp_imgnamelists[i].endsWith("."))) {
+				m_imgnamelists.append(tmp_imgnamelists[i]);
+				ui->fileLists->insertItem(k, filepath + "/" + m_imgnamelists[k++]);
+			}
+		}
         if(m_imgnamelists.isEmpty()){
-            QMessageBox::information(this, tr("提示"),
-                                     tr("文件夹为空!"));
+            QMessageBox::information(this, QStringLiteral("提示"),
+									 QStringLiteral("文件夹为空!"));
             return;
-        }
-        for(int i=0; i<m_imgnamelists.size(); ++i){
-            ui->fileLists->insertItem(i, filepath + "/" + m_imgnamelists[i]);
         }
         //qDebug()<<imgNameList[0];
         ui->progressBar->setRange(0,m_imgnamelists.count()-1);
@@ -116,9 +134,9 @@ void Plot::mousePressEvent(QMouseEvent *event)
     if(!m_imgnamelists.isEmpty()&&event->button()==Qt::RightButton){
         if(ui->rectsTable->currentRow() != -1){
             ui->rectsTable->setCurrentCell(-1, -1);
-        }else{
+        }/*else{
             m_labels.addId();
-        }
+        }*/
 
     }
 
@@ -215,13 +233,13 @@ void Plot::clickedFileLists(){
 void Plot::save()
 {
     if(m_imgnamelists.isEmpty()){
-        QMessageBox::information(this, tr("提示"),
-                                 tr("请打开文件夹!"));
+        QMessageBox::information(this, QStringLiteral("提示"),
+								 QStringLiteral("请打开文件夹!"));
         return;
     }
-    ui->caption->setText("保存中...");
+    ui->caption->setText(QStringLiteral("保存中..."));
     m_rects.save(m_imgnamelists[m_imgid]);
-    ui->caption->setText("保存成功！");
+    ui->caption->setText(QStringLiteral("保存成功!"));
 }
 
 void Plot::recover()
@@ -236,30 +254,54 @@ void Plot::updateInf()
     //ui->lineEdit->setText(ratioDeal);
     ui->progressBar->setValue(m_imgid);
     ui->caption->setText("No."+QString("%1").arg(m_imgid+1)+": "+m_imgnamelists[m_imgid]); 
-    m_img.imread(m_imgnamelists[m_imgid]);
-    ui->brightness->setValue(0);
-    ui->contrast->setValue(0);
+    if(! m_img.imread(m_imgnamelists[m_imgid])){
+        QMessageBox::information(this, QStringLiteral("提示"),
+                                 tr("Load Image: ") + m_imgnamelists[m_imgid] + tr(" Error!") );
+       preImg();
+    }
     recover();
     this->setCursor(Qt::ArrowCursor);
     m_pairpoint.clear();
     m_img.OnPresetImage();
     m_img.setOffset(0, 0);
+    if(m_img.getIsDCM()){
+        ui->brightness->setRange(-1000, 4000);
+        ui->contrast->setRange(-1000, 4000);
+//        int ww = static_cast<int>(m_img.getOrgWW());
+//        int wl = static_cast<int>(m_img.getOrgWL());
+//        ui->brightness->setValue(ww);
+//        ui->contrast->setValue(wl);
+        ui->brightness_label->setText(QStringLiteral("窗宽"));
+        ui->contrast_label->setText(QStringLiteral("窗位"));
+        ui->reset_brightness->setText(QStringLiteral("窗宽重置"));
+        ui->reset_contrast->setText(QStringLiteral("窗位重置"));
+    }else{
+        ui->brightness->setRange(-100, 100);
+        ui->contrast->setRange(-100, 100);
+        ui->brightness->setValue(0);
+        ui->contrast->setValue(0);
+        ui->brightness_label->setText(QStringLiteral("亮度"));
+        ui->contrast_label->setText(QStringLiteral("对比度"));
+        ui->reset_brightness->setText(QStringLiteral("亮度重置"));
+        ui->reset_contrast->setText(QStringLiteral("对比度重置"));
+    }
 }
 
 void Plot::preImg()
 {
     if(m_imgnamelists.isEmpty()){
-        QMessageBox::information (this, tr("提示"),
-                                  tr("请打开文件夹!"));
+        QMessageBox::information (this, QStringLiteral("提示"),
+								  QStringLiteral("请打开文件夹!"));
         return;
     }
     if(m_imgid==0){
-        QMessageBox::information (this,tr("提示"),
-                                  tr("这是第一张!"));
+        QMessageBox::information (this, QStringLiteral("提示"),
+								  QStringLiteral("这是第一张!"));
          return;
 
     }else {
-        save();
+        if(ui->autosave->isChecked())
+            save();
         --m_imgid;
         updateInf();
     }
@@ -268,17 +310,18 @@ void Plot::preImg()
 void Plot::nextImg()
 {
     if(m_imgnamelists.isEmpty()){
-        QMessageBox::information (this, tr("提示"),
-                                  tr("请打开文件夹!"));
+        QMessageBox::information (this, QStringLiteral("提示"),
+									QStringLiteral("请打开文件夹!"));
         return;
     }
     if(m_imgid==m_imgnamelists.count()-1)
     {
-        QMessageBox::information (this, tr("提示"),
-                                  tr("已是最后一张!"));
+        QMessageBox::information (this, QStringLiteral("提示"),
+								 QStringLiteral("已是最后一张!"));
         return;
     }else {
-        save();
+        if(ui->autosave->isChecked())
+            save();
         ++m_imgid;
         updateInf();
     }
@@ -287,10 +330,12 @@ void Plot::nextImg()
 void Plot::skipImg()
 {
     if(m_imgnamelists.isEmpty()){
-        QMessageBox::information (this, tr("提示"),
-                                  tr("请打开文件夹!"));
+        QMessageBox::information (this, QStringLiteral("提示"),
+								  QStringLiteral("请打开文件夹!"));
         return;
     }
+    if(ui->autosave->isChecked())
+        save();
     m_imgid = ui->skip_line->text().toInt() - 1;
     if(m_imgid<0){
         m_imgid = 0;
@@ -302,7 +347,8 @@ void Plot::skipImg()
 
 void Plot::windowClose()
 {
-    save();
+    if(ui->autosave->isChecked())
+        save();
     this->close();
 }
 void Plot::deleteRect()
@@ -319,6 +365,7 @@ void Plot::clear()
 void Plot::adjustBrightness(int brightness){
     if(!m_imgnamelists.isEmpty()){
         m_img.adjustBrightness(brightness);
+        //m_display_scale.setText(QString::number(brightness));
     }
 }
 
@@ -329,10 +376,24 @@ void Plot::adjustContrast(int contrast){
 }
 
 void Plot::resetBrightness(){
+    if(!m_imgnamelists.isEmpty()){
+        if(m_img.getIsDCM()){
+            int ww = static_cast<int>(m_img.getOrgWW());
+            ui->brightness->setValue(ww);
+            return;
+        }
+    }
     ui->brightness->setValue(0);
 }
 
 void Plot::resetContrast(){
+    if(!m_imgnamelists.isEmpty()){
+        if(m_img.getIsDCM()){
+            int wl = static_cast<int>(m_img.getOrgWL());
+            ui->contrast->setValue(wl);
+            return;
+        }
+    }
     ui->contrast->setValue(0);
 }
 
@@ -361,6 +422,10 @@ void Plot::keyPressEvent(QKeyEvent *event)
     if(!m_imgnamelists.isEmpty()&&event->key()==Qt::Key_Delete){
         deleteRect();
         return;
+    }
+    if(!m_imgnamelists.isEmpty()&&event->key()==Qt::Key_0&&event->modifiers()==Qt::ControlModifier){
+        m_img.OnPresetImage();
+        m_img.setOffset(0, 0);
     }
 
     QWidget::keyPressEvent(event);

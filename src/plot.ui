@@ -505,7 +505,7 @@
                <item row="3" column="0">
                 <layout class="QHBoxLayout" name="horizontalLayout_4">
                  <item>
-                  <widget class="QLabel" name="label_4">
+                  <widget class="QLabel" name="brightness_label">
                    <property name="minimumSize">
                     <size>
                      <width>50</width>
@@ -555,8 +555,11 @@
                    <property name="orientation">
                     <enum>Qt::Horizontal</enum>
                    </property>
+                   <property name="invertedAppearance">
+                    <bool>false</bool>
+                   </property>
                    <property name="tickPosition">
-                    <enum>QSlider::TicksAbove</enum>
+                    <enum>QSlider::NoTicks</enum>
                    </property>
                   </widget>
                  </item>
@@ -584,7 +587,7 @@
                <item row="4" column="0">
                 <layout class="QHBoxLayout" name="horizontalLayout_7">
                  <item>
-                  <widget class="QLabel" name="label_5">
+                  <widget class="QLabel" name="contrast_label">
                    <property name="minimumSize">
                     <size>
                      <width>50</width>
@@ -626,7 +629,7 @@
                     <enum>Qt::Horizontal</enum>
                    </property>
                    <property name="tickPosition">
-                    <enum>QSlider::TicksAbove</enum>
+                    <enum>QSlider::NoTicks</enum>
                    </property>
                   </widget>
                  </item>
@@ -782,6 +785,31 @@
             <number>1</number>
            </property>
            <item row="2" column="0">
+            <widget class="QListWidget" name="fileLists">
+             <property name="minimumSize">
+              <size>
+               <width>515</width>
+               <height>100</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>515</width>
+               <height>100</height>
+              </size>
+             </property>
+             <property name="mouseTracking">
+              <bool>true</bool>
+             </property>
+             <property name="verticalScrollBarPolicy">
+              <enum>Qt::ScrollBarAlwaysOn</enum>
+             </property>
+             <property name="sizeAdjustPolicy">
+              <enum>QAbstractScrollArea::AdjustIgnored</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
             <widget class="QTableWidget" name="rectsTable">
              <property name="minimumSize">
               <size>
@@ -861,31 +889,6 @@
              </column>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QListWidget" name="fileLists">
-             <property name="minimumSize">
-              <size>
-               <width>515</width>
-               <height>100</height>
-              </size>
-             </property>
-             <property name="maximumSize">
-              <size>
-               <width>515</width>
-               <height>100</height>
-              </size>
-             </property>
-             <property name="mouseTracking">
-              <bool>true</bool>
-             </property>
-             <property name="verticalScrollBarPolicy">
-              <enum>Qt::ScrollBarAlwaysOn</enum>
-             </property>
-             <property name="sizeAdjustPolicy">
-              <enum>QAbstractScrollArea::AdjustIgnored</enum>
-             </property>
-            </widget>
-           </item>
            <item row="0" column="0">
             <widget class="QLabel" name="label_2">
              <property name="minimumSize">
@@ -910,6 +913,16 @@
              </property>
              <property name="text">
               <string>图像文件列表</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QCheckBox" name="autosave">
+             <property name="text">
+              <string>自动保存</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>

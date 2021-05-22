@@ -1,4 +1,4 @@
-#include "file.h"
+﻿#include "file.h"
 #include <QDir>
 #include <QFile>
 #include <QTextStream>
