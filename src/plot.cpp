@@ -246,6 +246,8 @@ void Plot::draw()
 
 void Plot::clickedFileLists(){
     if(ui->fileLists->currentRow() != m_imgid){
+        if(ui->autosave->isChecked())
+            save();
         m_imgid = ui->fileLists->currentRow();
         updateInf();
     }

@@ -85,6 +85,8 @@ void LabelInfs::save(const QString &imgname){
         QString str = rectinf2string(m_rects[i]);
         saveinf.append(str);
     }
+    if(saveinf.size() == 0)
+        return;
 	QFileInfo tmp_file(m_file_root + "/" + imgname);
 	QString base_name = tmp_file.baseName();
 	QString savepath = m_file_root + "/" + base_name + ".csv";
