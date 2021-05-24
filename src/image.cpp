@@ -54,7 +54,7 @@ void Image::adjustBrightness(int brightness){
         QImage tmp_image = m_image_orig;
         int pixels = m_width * m_height;
 
-        unsigned int *data = (unsigned int *)tmp_image.bits();
+        unsigned int *data = reinterpret_cast<unsigned int *>(tmp_image.bits());
         for (int i = 0; i < pixels; ++i)
         {
             red= qRed(data[i])+ brightness;
@@ -76,7 +76,7 @@ void Image::adjustContrast(int contrast){
     }else{
         QImage tmp_image = m_image_orig;
         int pixels = m_width * m_height;
-        unsigned int *data = (unsigned int *)tmp_image.bits();
+        unsigned int *data = reinterpret_cast<unsigned int *>(tmp_image.bits());
 
         int red, green, blue, nRed, nGreen, nBlue;
 
