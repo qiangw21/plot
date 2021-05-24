@@ -72,6 +72,8 @@ private:
     void draw();//画矩形
     void recover(); //恢复标注状态
     void updateInf();//更新信息
+    void updateImgNameLists(const QString& dir);
+    bool isDICM(const QString& file);
     void moveRectLine(QPoint &point1, QPoint &point2);//修改矩形框
     void setRectinf();
 };

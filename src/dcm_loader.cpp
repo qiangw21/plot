@@ -39,28 +39,33 @@ void DcmLoader::setWindow(double wl, double ww)
         return;
 
     int length = m_height*m_width;
-    omp_set_num_threads(1024);
+	double multiplier = 255.0 / (pixel_max_val - pixel_min_val);
+    //omp_set_num_threads(2);
+    //double start = omp_get_wtime();
     #pragma omp parallel for
     for(int k = 0; k < length; ++k){
-        int pixel_value = m_pixelData[k];
-        if(m_pixelData[k] > pixel_max_val)
-            pixel_value = pixel_max_val;
-        else if(m_pixelData[k] < pixel_min_val)
-            pixel_value = pixel_min_val;
-
-        if (m_PhotometricInterpretation == "MONOCHROME1") {
-            m_img[3*k] = static_cast<unsigned char>(
-                (1.0 - static_cast<double>(pixel_value - pixel_min_val) / (pixel_max_val - pixel_min_val)) * 255 + 0.5);
-            m_img[3*k + 1] = m_img[3*k];
-            m_img[3*k + 2] = m_img[3*k];
-        }
-        else {
-            m_img[3*k] = static_cast<unsigned char>(
-                (static_cast<double>(pixel_value - pixel_min_val) / (pixel_max_val - pixel_min_val)) * 255 + 0.5);
+        if(m_pixelData[k] > pixel_max_val){
+            m_img[3*k] = 255;
+            m_img[3*k + 1] = 255;
+            m_img[3*k + 2] = 255;
+        }else if(m_pixelData[k] < pixel_min_val){
+            m_img[3*k] = 0;
+            m_img[3*k + 1] = 0;
+            m_img[3*k + 2] = 0;
+        }else {
+            m_img[3*k] = static_cast<unsigned char>((m_pixelData[k] - pixel_min_val) * multiplier);
             m_img[3 * k + 1] = m_img[3 * k];
             m_img[3 * k + 2] = m_img[3 * k];
         }
+        if (m_PhotometricInterpretation == "MONOCHROME1"){
+            m_img[3*k] = static_cast<unsigned char>(255 - m_img[3*k]);
+            m_img[3*k + 1] = m_img[3*k];
+            m_img[3*k + 2] = m_img[3*k];
+        }
+
     }
+    //double end = omp_get_wtime();
+    //std::cout << "Multi-thread Time is: " << end - start << std::endl;
 }
 
 void DcmLoader::getWindow(double &wl, double &ww)

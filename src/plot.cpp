@@ -8,6 +8,7 @@
 #include <qmimedata.h>
 #include <sstream>
 #include <string>
+#include <fstream>
 
 
 Plot::Plot(QWidget *parent) :
@@ -40,18 +41,6 @@ Plot::Plot(QWidget *parent) :
     m_img.init(ui->display_image);
     m_rects.init(ui->rectsTable, &m_labels);
 	
-
-//    m_display_scale.setFixedSize(QSize(20, 20));
-//    m_display_scale.setAutoFillBackground(true);
-//    QPalette palette;
-//    palette.setColor(QPalette::Background, Qt::white);
-//    m_display_scale.setPalette(palette);
-
-//    m_display_scale.setAlignment(Qt::AlignCenter);
-
-//    m_display_scale.setVisible(true);
-//    m_display_scale.move(0,3);
-
 }
 
 Plot::~Plot()
@@ -78,33 +67,11 @@ void Plot::openFloder() //打开图片文件夹
         cacheList.clear();
         cacheList << filepath;
         m_cache.writer(cachePath, cacheList, false);
-        m_rects.setFileRoot(filepath);
-        m_img.setFileRoot(filepath);
         ui->caption->setText(QStringLiteral("初始化..."));
         m_imgnamelists.clear();
 		ui->fileLists->clear();
 		m_imgid = 0;
-        QDir dir(filepath);
-        //QStringList namefilters;
-        //namefilters<<"*.jpg"<<"*.png"<<"*.jpeg"<<"*.dcm";
-        //m_imgnamelists = dir.entryList(namefilters,QDir::Files|QDir::Readable,QDir::Name);
-		QStringList tmp_imgnamelists = dir.entryList();
-
-		for (int i = 0, k = 0; i < tmp_imgnamelists.size(); ++i) {
-			if (!(tmp_imgnamelists[i].endsWith(".csv") || tmp_imgnamelists[i].endsWith("."))) {
-				m_imgnamelists.append(tmp_imgnamelists[i]);
-				ui->fileLists->insertItem(k, filepath + "/" + m_imgnamelists[k++]);
-			}
-		}
-        if(m_imgnamelists.isEmpty()){
-            QMessageBox::information(this, QStringLiteral("提示"),
-									 QStringLiteral("文件夹为空!"));
-            return;
-        }
-        //qDebug()<<imgNameList[0];
-        ui->progressBar->setRange(0,m_imgnamelists.count()-1);
-        ui->skip_line->setText("1");
-        updateInf();
+		updateImgNameLists(filepath);
     }
 
 }
@@ -127,36 +94,29 @@ bool Plot::eventFilter(QObject *watched, QEvent *event)
 			ui->fileLists->clear();
 			m_imgid = 0;
 			if (file.isDir()) {
-				m_img.setFileRoot(file.filePath());
-				m_rects.setFileRoot(file.filePath());
-				QDir dir(file.filePath());
-				QStringList tmp_imgnamelists = dir.entryList();
-				for (int i = 0, k = 0; i < tmp_imgnamelists.size(); ++i) {
-					if (!(tmp_imgnamelists[i].endsWith(".csv") || tmp_imgnamelists[i].endsWith("."))) {
-						m_imgnamelists.append(tmp_imgnamelists[i]);
-						ui->fileLists->insertItem(k, file.filePath() + "/" + m_imgnamelists[k++]);
-					}
-				}
-				if (m_imgnamelists.isEmpty()) {
-					QMessageBox::information(this, QStringLiteral("提示"),
-						QStringLiteral("文件夹为空!"));
-					return true;
-				}
+                updateImgNameLists(file.filePath());
+				update();
+				return false;
+			}
+            m_img.setFileRoot(file.path());
+			m_rects.setFileRoot(file.path());
+			QString filename = file.fileName().toLower();
+			if (filename.endsWith(".jpg") || filename.endsWith(".png") ||
+				filename.endsWith(".jpeg") || filename.endsWith(".dcm") ||
+				isDICM(file.filePath())) {
+				m_imgnamelists.append(file.fileName());
+				ui->fileLists->insertItem(0, file.filePath());
 				ui->progressBar->setRange(0, m_imgnamelists.count() - 1);
 				ui->skip_line->setText("1");
 				updateInf();
 				update();
 				return false;
-			}
-			m_imgnamelists.append(file.fileName());
-			m_img.setFileRoot(file.path());
-			m_rects.setFileRoot(file.path());
-			ui->fileLists->insertItem(0, file.filePath());
-			ui->progressBar->setRange(0, m_imgnamelists.count() - 1);
-			ui->skip_line->setText("1");
-			updateInf();
-			update();
-			return false;
+			}else{
+				int index = filename.split(".").size();
+				QMessageBox::information(this, QStringLiteral("提示"),
+					tr("Can't load image type: *.") + filename.split(".")[index - 1]);
+				return false;
+			}			
 		}
 	}
 	if(watched==ui->display_image&&event->type()==QEvent::Paint&&!m_imgnamelists.isEmpty()){
@@ -259,7 +219,7 @@ void Plot::mouseReleaseEvent(QMouseEvent *event)
 void Plot::draw()
 {
     m_img.display(m_painter);
-    m_painter.setPen(QPen(Qt::black,1,Qt::SolidLine));
+    m_painter.setPen(QPen(Qt::green,1,Qt::SolidLine));
     m_painter.drawLine(m_movepoint.x(),0,m_movepoint.x(),ui->display_image->height());
     m_painter.drawLine(0,m_movepoint.y(),ui->display_image->width(),m_movepoint.y());
     if(!m_pairpoint.isEmpty()){
@@ -267,6 +227,14 @@ void Plot::draw()
         m_painter.drawPoints(m_pairpoint);
     }
     m_rects.drawRects(m_painter, m_img.getScale());
+    if(m_img.getIsDCM()){
+        int ww = ui->brightness->value();
+        int wl = ui->contrast->value();
+        int y = ui->display_image->height() - 20;
+        QString text = QString(" WL: ") +  QString::number(wl) + QString("  WW: ") + QString::number(ww);
+        m_painter.setPen(QPen(Qt::yellow,18,Qt::SolidLine));//设置画笔形式
+        m_painter.drawText(5,y,text);
+    }
     int id = ui->rectsTable->currentRow();
     if(id!=-1){
         RectInf& t_rect = m_rects.selectRect(id, m_painter, m_img.getScale());
@@ -318,12 +286,12 @@ void Plot::updateInf()
     m_img.OnPresetImage();
     m_img.setOffset(0, 0);
     if(m_img.getIsDCM()){
-        ui->brightness->setRange(-1000, 4000);
-        ui->contrast->setRange(-1000, 4000);
-//        int ww = static_cast<int>(m_img.getOrgWW());
-//        int wl = static_cast<int>(m_img.getOrgWL());
-//        ui->brightness->setValue(ww);
-//        ui->contrast->setValue(wl);
+        int ww = static_cast<int>(m_img.getOrgWW());
+        int wl = static_cast<int>(m_img.getOrgWL());
+        ui->brightness->setRange(ww-3000, ww+3000);
+        ui->contrast->setRange(wl-3000, wl+3000);
+        ui->brightness->setValue(ww);
+        ui->contrast->setValue(wl);
         ui->brightness_label->setText(QStringLiteral("窗宽："));
         ui->contrast_label->setText(QStringLiteral("窗位："));
         ui->reset_brightness->setText(QStringLiteral("窗宽重置"));
@@ -596,4 +564,47 @@ void Plot::upSelectRect(){
     }
     ui->rectsTable->setCurrentCell(id - 1, 0);
 }
+
+void Plot::updateImgNameLists(const QString& filepath)
+{
+	m_rects.setFileRoot(filepath);
+	m_img.setFileRoot(filepath);
+	QDir dir(filepath);
+	QStringList tmp_imgnamelists = dir.entryList();
+
+	for (int i = 0, k = 0; i < tmp_imgnamelists.size(); ++i) {
+		if (tmp_imgnamelists[i].endsWith(".jpg") || tmp_imgnamelists[i].endsWith(".png") || 
+			tmp_imgnamelists[i].endsWith(".jpeg") || tmp_imgnamelists[i].endsWith(".dcm") || 
+			isDICM(QString(filepath + "/" + tmp_imgnamelists[i]))){
+			m_imgnamelists.append(tmp_imgnamelists[i]);
+			ui->fileLists->insertItem(k, filepath + "/" + m_imgnamelists[k++]);
+		}
+	}
+	if (m_imgnamelists.isEmpty()) {
+		QMessageBox::information(this, QStringLiteral("提示"),
+			QStringLiteral("文件夹为空!"));
+		return;
+	}
+	ui->progressBar->setRange(0, m_imgnamelists.count() - 1);
+	ui->skip_line->setText("1");
+	updateInf();
+}
+
+bool Plot::isDICM(const QString& file)
+{
+	QByteArray cdata = file.toLocal8Bit();
+	std::string filepath(cdata);
+	std::ifstream temp_file(filepath);
+	std::string line;
+	if (temp_file.is_open()) {
+		std::getline(temp_file, line);
+		if (line.size() < 132)
+			return false;
+		if (line.substr(128, 4) == std::string("DICM"))
+			return true;
+	}
+	return false;
+}
+
+
 

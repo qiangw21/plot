@@ -18,7 +18,7 @@ public:
     int getWidth() {return m_width;}
     int getHeight() {return m_height;}
     const float* getScale() {return m_scale;}
-    void setFileRoot(QString &fileroot) {m_file_root = fileroot;}
+    void setFileRoot(const QString &fileroot) {m_file_root = fileroot;}
     bool imread(QString &imgname);
     void display(QPainter &painter);
     void adjustBrightness(int brightness);

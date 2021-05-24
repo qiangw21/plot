@@ -17,7 +17,9 @@ bool Image::imread(QString &imgname){
         m_height = m_image_orig.height();
         m_is_dcm = false;
     }else {
-        if(! m_dcmLoader.loadFile(imgfile.toStdString()))
+		QByteArray cdata = imgfile.toLocal8Bit();
+		std::string filepath(cdata);
+        if(! m_dcmLoader.loadFile(filepath))
             return false;
         m_width = m_dcmLoader.getWidth();
         m_height = m_dcmLoader.getHeight();
