@@ -27,7 +27,7 @@ bool Image::imread(QString &imgname){
         m_temp_wl = m_org_wl;
         m_temp_ww = m_org_ww;
         unsigned char* data = m_dcmLoader.getImg();
-        m_image_show = QImage(data, m_width, m_height, m_width*3, QImage::Format_RGB888);
+        m_image_show = QImage(data, m_width, m_height, m_width, QImage::Format_Grayscale8);
         //m_image_orig = m_image_show;
         m_is_dcm = true;
     }
@@ -54,7 +54,23 @@ void Image::adjustBrightness(int brightness){
         QImage tmp_image = m_image_orig;
         int pixels = m_width * m_height;
 
-        unsigned int *data = reinterpret_cast<unsigned int *>(tmp_image.bits());
+		if (tmp_image.isGrayscale()) {
+			unsigned char *data = tmp_image.bits();
+			for (int i = 0; i < pixels; ++i)
+			{
+				red = qRed(data[i]) + brightness;
+				red = (red < 0x00) ? 0x00 : (red > 0xff) ? 0xff : red;
+				green = qGreen(data[i]) + brightness;
+				green = (green < 0x00) ? 0x00 : (green > 0xff) ? 0xff : green;
+				blue = qBlue(data[i]) + brightness;
+				blue = (blue < 0x00) ? 0x00 : (blue > 0xff) ? 0xff : blue;
+				data[i] = qRgba(red, green, blue, qAlpha(data[i]));
+			}
+			m_image_show = tmp_image;
+			return;
+		}
+
+		unsigned int *data = reinterpret_cast<unsigned int *>(tmp_image.bits());
         for (int i = 0; i < pixels; ++i)
         {
             red= qRed(data[i])+ brightness;
@@ -74,49 +90,52 @@ void Image::adjustContrast(int contrast){
         m_temp_wl = static_cast<double>(contrast);
         m_dcmLoader.setWindow(m_temp_wl, m_temp_ww);
     }else{
-        QImage tmp_image = m_image_orig;
-        int pixels = m_width * m_height;
+		float param = contrast / 100.0;
+		if(contrast > 0 && contrast < 100)
+			param = 1 / (1 - contrast / 100.0) - 1;
+
+		QImage tmp_image = m_image_orig;
+		int pixels = m_width * m_height;
+		int red, green, blue, nRed, nGreen, nBlue;
+
+		if (m_image_orig.isGrayscale()) {
+			unsigned char *data = tmp_image.bits();
+			for (int i = 0; i < pixels; ++i)
+			{
+				nRed = qRed(data[i]);
+				nGreen = qGreen(data[i]);
+				nBlue = qBlue(data[i]);
+
+				red = nRed + (nRed - 127) * param;
+				red = (red < 0x00) ? 0x00 : (red > 0xff) ? 0xff : red;
+				green = nGreen + (nGreen - 127) * param;
+				green = (green < 0x00) ? 0x00 : (green > 0xff) ? 0xff : green;
+				blue = nBlue + (nBlue - 127) * param;
+				blue = (blue < 0x00) ? 0x00 : (blue > 0xff) ? 0xff : blue;
+
+				data[i] = qRgba(red, green, blue, qAlpha(data[i]));
+			}
+			m_image_show = tmp_image;
+			return;
+		}
+		
         unsigned int *data = reinterpret_cast<unsigned int *>(tmp_image.bits());
+		for (int i = 0; i < pixels; ++i)
+		{
+			nRed = qRed(data[i]);
+			nGreen = qGreen(data[i]);
+			nBlue = qBlue(data[i]);
 
-        int red, green, blue, nRed, nGreen, nBlue;
+			red = nRed + (nRed - 127) * param;
+			red = (red < 0x00) ? 0x00 : (red > 0xff) ? 0xff : red;
+			green = nGreen + (nGreen - 127) * param;
+			green = (green < 0x00) ? 0x00 : (green > 0xff) ? 0xff : green;
+			blue = nBlue + (nBlue - 127) * param;
+			blue = (blue < 0x00) ? 0x00 : (blue > 0xff) ? 0xff : blue;
 
-        if (contrast > 0 && contrast < 100)
-        {
-            float param = 1 / (1 - contrast / 100.0) - 1;
-
-            for (int i = 0; i < pixels; ++i)
-            {
-                nRed = qRed(data[i]);
-                nGreen = qGreen(data[i]);
-                nBlue = qBlue(data[i]);
-
-                red = nRed + (nRed - 127) * param;
-                red = (red < 0x00) ? 0x00 : (red > 0xff) ? 0xff : red;
-                green = nGreen + (nGreen - 127) * param;
-                green = (green < 0x00) ? 0x00 : (green > 0xff) ? 0xff : green;
-                blue = nBlue + (nBlue - 127) * param;
-                blue = (blue < 0x00) ? 0x00 : (blue > 0xff) ? 0xff : blue;
-
-                data[i] = qRgba(red, green, blue, qAlpha(data[i]));
-            }
-        }else{
-            for (int i = 0; i < pixels; ++i)
-            {
-                nRed = qRed(data[i]);
-                nGreen = qGreen(data[i]);
-                nBlue = qBlue(data[i]);
-
-                red = nRed + (nRed - 127) * contrast / 100.0;
-                red = (red < 0x00) ? 0x00 : (red > 0xff) ? 0xff : red;
-                green = nGreen + (nGreen - 127) * contrast / 100.0;
-                green = (green < 0x00) ? 0x00 : (green > 0xff) ? 0xff : green;
-                blue = nBlue + (nBlue - 127) * contrast / 100.0;
-                blue = (blue < 0x00) ? 0x00 : (blue > 0xff) ? 0xff : blue;
-
-                data[i] = qRgba(red, green, blue, qAlpha(data[i]));
-            }
-        }
-        m_image_show = tmp_image;
+			data[i] = qRgba(red, green, blue, qAlpha(data[i]));
+		}
+		m_image_show = tmp_image;
     }
 }
 

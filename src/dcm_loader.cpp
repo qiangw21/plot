@@ -25,7 +25,7 @@ bool DcmLoader::loadFile(const std::string &dcmfile)
 
     if (m_img != nullptr)
         delete [] m_img;
-    m_img = new unsigned char[m_width*m_height*3];
+    m_img = new unsigned char[m_width*m_height];
     setWindow(m_wl, m_ww);
 
     return true;
@@ -45,22 +45,14 @@ void DcmLoader::setWindow(double wl, double ww)
     #pragma omp parallel for
     for(int k = 0; k < length; ++k){
         if(m_pixelData[k] > pixel_max_val){
-            m_img[3*k] = 255;
-            m_img[3*k + 1] = 255;
-            m_img[3*k + 2] = 255;
+            m_img[k] = 255;
         }else if(m_pixelData[k] < pixel_min_val){
-            m_img[3*k] = 0;
-            m_img[3*k + 1] = 0;
-            m_img[3*k + 2] = 0;
+            m_img[k] = 0;
         }else {
-            m_img[3*k] = static_cast<unsigned char>((m_pixelData[k] - pixel_min_val) * multiplier);
-            m_img[3 * k + 1] = m_img[3 * k];
-            m_img[3 * k + 2] = m_img[3 * k];
+            m_img[k] = static_cast<unsigned char>((m_pixelData[k] - pixel_min_val) * multiplier);
         }
         if (m_PhotometricInterpretation == "MONOCHROME1"){
-            m_img[3*k] = static_cast<unsigned char>(255 - m_img[3*k]);
-            m_img[3*k + 1] = m_img[3*k];
-            m_img[3*k + 2] = m_img[3*k];
+            m_img[k] = static_cast<unsigned char>(255 - m_img[k]);
         }
 
     }
