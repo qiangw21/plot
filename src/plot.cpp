@@ -287,6 +287,7 @@ void Plot::updateInf()
     m_pairpoint.clear();
     m_img.OnPresetImage();
     m_img.setOffset(0, 0);
+	m_img.setIsUpdateInf(true);
     if(m_img.getIsDCM()){
         int ww = static_cast<int>(m_img.getOrgWW());
         int wl = static_cast<int>(m_img.getOrgWL());
@@ -308,6 +309,7 @@ void Plot::updateInf()
         ui->reset_brightness->setText(QStringLiteral("亮度重置"));
         ui->reset_contrast->setText(QStringLiteral("对比度重置"));
     }
+	m_img.setIsUpdateInf(false);
 }
 
 void Plot::preImg()

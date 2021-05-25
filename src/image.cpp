@@ -46,7 +46,10 @@ void Image::display(QPainter &painter){
 }
 
 void Image::adjustBrightness(int brightness){
-    if(m_is_dcm){
+	if (m_is_updateInf)
+		return;
+
+	if(m_is_dcm){
         m_temp_ww = static_cast<double>(brightness);
         m_dcmLoader.setWindow(m_temp_wl, m_temp_ww);
     }else{
@@ -86,7 +89,10 @@ void Image::adjustBrightness(int brightness){
 }
 
 void Image::adjustContrast(int contrast){
-    if(m_is_dcm){
+	if (m_is_updateInf)
+		return;
+	
+	if(m_is_dcm){
         m_temp_wl = static_cast<double>(contrast);
         m_dcmLoader.setWindow(m_temp_wl, m_temp_ww);
     }else{

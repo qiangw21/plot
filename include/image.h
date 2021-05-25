@@ -12,7 +12,7 @@ class Image
 {
 public:
     Image():m_canvas(nullptr), m_zoomValue(1.0),
-            m_offset(0, 0), m_is_dcm(false){}
+            m_offset(0, 0), m_is_dcm(false), m_is_updateInf(false){}
     ~Image() {}
     void init(QLabel* canvas);
     int getWidth() {return m_width;}
@@ -34,6 +34,7 @@ public:
     bool getIsDCM() {return m_is_dcm;}
     double getOrgWW(){return m_org_ww;}
     double getOrgWL(){return m_org_wl;}
+	void setIsUpdateInf(bool isUpdateInf) { m_is_updateInf = isUpdateInf; }
 
 private:
     QLabel* m_canvas;
@@ -53,6 +54,7 @@ private:
     double m_temp_ww;
     double m_temp_wl;
     bool m_is_dcm;
+	bool m_is_updateInf;
 };
 
 #endif // IMAGE_H
