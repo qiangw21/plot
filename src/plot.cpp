@@ -12,7 +12,7 @@
 
 
 Plot::Plot(QWidget *parent) :
-    QMainWindow(parent), ui(new Ui::plotUi)
+    QMainWindow(parent), ui(new Ui::plotUi), m_lineloc(none_loc), m_leftPress(false)
 {
     ui->setupUi(this);
     ui->display_image->installEventFilter(this);
@@ -147,11 +147,13 @@ void Plot::mousePressEvent(QMouseEvent *event)
     if(!m_imgnamelists.isEmpty()&&event->button()==Qt::RightButton){
         if(ui->rectsTable->currentRow() != -1){
             ui->rectsTable->setCurrentCell(-1, -1);
+            this->setCursor(Qt::ArrowCursor);
         }/*else{
             m_labels.addId();
         }*/
-
     }
+    if(!m_imgnamelists.isEmpty()&&event->button()==Qt::LeftButton)
+        m_leftPress = true;
 
 }
 
@@ -189,6 +191,8 @@ void Plot::mouseReleaseEvent(QMouseEvent *event)
 {
     if(!m_imgnamelists.isEmpty()&&event->button()==Qt::LeftButton)
     {
+        m_lineloc = none_loc;
+        m_leftPress = false;
         QPoint release_point=event->pos()-(ui->centralWidget->pos()+ui->widget->pos()+ui->display_image->pos());
         qreal zoomValue = m_img.getZoomValue();
         release_point -= m_img.getOffset();
@@ -238,8 +242,10 @@ void Plot::draw()
     int id = ui->rectsTable->currentRow();
     if(id!=-1){
         RectInf& t_rect = m_rects.selectRect(id, m_painter, m_img.getScale());
+        setMoveLineCuros(t_rect.minPoint, t_rect.maxPoint);
         moveRectLine(t_rect.minPoint, t_rect.maxPoint);
         m_rects.setRowInf(id, t_rect);
+        m_pairpoint.clear();
     }
 
 }
@@ -458,72 +464,59 @@ void Plot::keyPressEvent(QKeyEvent *event)
 
 void Plot::moveRectLine(QPoint &point1, QPoint &point2)
 {
-    int interval = 20;
-    QPoint movepoint;
-    movepoint.setX(m_movepoint.x() / m_img.getScale()[0]);
-    movepoint.setY(m_movepoint.y() / m_img.getScale()[1]);
-    if(abs(movepoint.x()-point1.x())<interval &&
-       abs(movepoint.y()-point1.y())<interval){
-        this->setCursor(Qt::SizeFDiagCursor);
-        if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
-            point1.setX(m_moverectpoint.x());
-            point1.setY(m_moverectpoint.y());
-            m_pairpoint.clear();
+    switch (m_lineloc) {
+
+        case line_top_left: {
+                if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
+                    point1.setX(m_moverectpoint.x());
+                    point1.setY(m_moverectpoint.y());
+                }
+                break;
         }
-    }else if(abs(movepoint.x()-point2.x())<interval &&
-             abs(movepoint.y()-point2.y())<interval){
-        this->setCursor(Qt::SizeFDiagCursor);
-        if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
-            point2.setX(m_moverectpoint.x());
-            point2.setY(m_moverectpoint.y());
-            m_pairpoint.clear();
+        case line_down_right: {
+                if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
+                    point2.setX(m_moverectpoint.x());
+                    point2.setY(m_moverectpoint.y());
+                }
+                break;
         }
-    }else if(abs(movepoint.x()-point2.x())<interval &&
-             abs(movepoint.y()-point1.y())<interval){
-        this->setCursor(Qt::SizeBDiagCursor);
-        if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
-            point2.setX(m_moverectpoint.x());
-            point1.setY(m_moverectpoint.y());
-            m_pairpoint.clear();
+        case line_top_right: {
+                if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
+                    point2.setX(m_moverectpoint.x());
+                    point1.setY(m_moverectpoint.y());
+                }
+                break;
         }
-    }else if(abs(movepoint.x()-point1.x())<interval &&
-             abs(movepoint.y()-point2.y())<interval){
-        this->setCursor(Qt::SizeBDiagCursor);
-        if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
-            point1.setX(m_moverectpoint.x());
-            point2.setY(m_moverectpoint.y());
-            m_pairpoint.clear();
+        case line_down_left: {
+                if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
+                    point1.setX(m_moverectpoint.x());
+                    point2.setY(m_moverectpoint.y());
+                }
+                break;
         }
-    }else if(abs(movepoint.x() - point1.x())<interval &&
-             movepoint.y() >= point1.y() && movepoint.y() <= point2.y()){
-        this->setCursor(Qt::SizeHorCursor);
-        if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
-            point1.setX(m_moverectpoint.x());
-            m_pairpoint.clear();
+        case line_left: {
+                if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0)
+                    point1.setX(m_moverectpoint.x());
+                break;
         }
-    }else if(abs(movepoint.y() - point1.y())<interval &&
-             movepoint.x() >= point1.x() && movepoint.x() <= point2.x()){
-        this->setCursor(Qt::SizeVerCursor);
-        if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
-            point1.setY(m_moverectpoint.y());
-            m_pairpoint.clear();
+        case line_top: {
+                if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0)
+                    point1.setY(m_moverectpoint.y());
+                break;
         }
-    }else if(abs(movepoint.x() - point2.x())<interval &&
-             movepoint.y() >= point1.y() && movepoint.y() <= point2.y()){
-        this->setCursor(Qt::SizeHorCursor);
-        if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
-            point2.setX(m_moverectpoint.x());
-            m_pairpoint.clear();
+        case line_right: {
+                if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0)
+                    point2.setX(m_moverectpoint.x());
+                break;
         }
-    }else if(abs(movepoint.y() - point2.y())<interval &&
-             movepoint.x() >= point1.x() && movepoint.x() <= point2.x()){
-        this->setCursor(Qt::SizeVerCursor);
-        if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0){
-            point2.setY(m_moverectpoint.y());
-            m_pairpoint.clear();
+        case line_down: {
+                if(m_moverectpoint.x()!=0||m_moverectpoint.y()!=0)
+                    point2.setY(m_moverectpoint.y());
+                break;
         }
-    }else{
-        this->setCursor(Qt::ArrowCursor);
+        case none_loc: {
+            break;
+        }
     }
 }
 
@@ -610,5 +603,62 @@ bool Plot::isDICM(const QString& file)
 	return false;
 }
 
-
-
+void Plot::setMoveLineCuros(QPoint &point1, QPoint &point2)
+{
+    int interval = 20;
+    QPoint movepoint;
+    movepoint.setX(m_movepoint.x() / m_img.getScale()[0]);
+    movepoint.setY(m_movepoint.y() / m_img.getScale()[1]);
+    if(abs(movepoint.x()-point1.x())<interval &&
+       abs(movepoint.y()-point1.y())<interval){
+        if(!m_leftPress)
+            this->setCursor(Qt::SizeFDiagCursor);
+        if(m_lineloc==none_loc && m_leftPress)
+            m_lineloc = line_top_left;
+    }else if(abs(movepoint.x()-point2.x())<interval &&
+             abs(movepoint.y()-point2.y())<interval){
+        if(!m_leftPress)
+            this->setCursor(Qt::SizeFDiagCursor);
+        if(m_lineloc==none_loc && m_leftPress)
+            m_lineloc = line_down_right;
+    }else if(abs(movepoint.x()-point2.x())<interval &&
+             abs(movepoint.y()-point1.y())<interval){
+        if(!m_leftPress)
+            this->setCursor(Qt::SizeBDiagCursor);
+        if(m_lineloc==none_loc && m_leftPress)
+            m_lineloc = line_top_right;
+    }else if(abs(movepoint.x()-point1.x())<interval &&
+             abs(movepoint.y()-point2.y())<interval){
+        if(!m_leftPress)
+            this->setCursor(Qt::SizeBDiagCursor);
+        if(m_lineloc==none_loc && m_leftPress)
+            m_lineloc = line_down_left;
+    }else if(abs(movepoint.x() - point1.x())<interval &&
+             movepoint.y() >= point1.y() && movepoint.y() <= point2.y()){
+        if(!m_leftPress)
+            this->setCursor(Qt::SizeHorCursor);
+        if(m_lineloc==none_loc && m_leftPress)
+            m_lineloc = line_left;
+    }else if(abs(movepoint.y() - point1.y())<interval &&
+             movepoint.x() >= point1.x() && movepoint.x() <= point2.x()){
+        if(!m_leftPress)
+            this->setCursor(Qt::SizeVerCursor);
+        if(m_lineloc==none_loc && m_leftPress)
+            m_lineloc = line_top;
+    }else if(abs(movepoint.x() - point2.x())<interval &&
+             movepoint.y() >= point1.y() && movepoint.y() <= point2.y()){
+        if(!m_leftPress)
+            this->setCursor(Qt::SizeHorCursor);
+        if(m_lineloc==none_loc && m_leftPress)
+            m_lineloc = line_right;
+    }else if(abs(movepoint.y() - point2.y())<interval &&
+             movepoint.x() >= point1.x() && movepoint.x() <= point2.x()){
+        if(!m_leftPress)
+            this->setCursor(Qt::SizeVerCursor);
+        if(m_lineloc==none_loc && m_leftPress)
+            m_lineloc = line_down;
+    }else{
+        if(!m_leftPress)
+            this->setCursor(Qt::ArrowCursor);
+    }
+}
